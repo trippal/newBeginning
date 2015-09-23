@@ -1,0 +1,105 @@
+/**
+ * Created by xsirr on 22.09.2015.
+ */
+// Глобальная переменная для карты
+var map, control;
+//Инициализируем пустой массив слоев
+var layers = new Array();
+// Вызываем загрузку конфигурационного файла карты
+loadJSON('mapconfig.json',
+    function (data) {
+        var mps = data.mapproperties;
+        varmap(mps, 0, mps.length);
+    }
+);
+// Получаем параметры и рисуем карту
+/**@param alldata - массив данных, полученных из файла настроек
+ * @param i - индекс нужного конфига в массиве
+ * @param l - длина массива (не знаю зачем)*/
+function varmap(alldata, i, l) {
+    var d = alldata[i];
+    var center = d.center;
+    var zoom = d.zoom;
+    var minZoom = d.minZoom;
+    var maxZoom = d.maxZoom;
+    //Вносим параметры карты
+    map = L.map('map', {
+        center: center,
+        zoom: zoom,
+        minZoom: minZoom,
+        maxZoom: maxZoom
+    });
+    //Получаем конфиг для слоев и вызываем функцию загрузки слоев
+    loadJSON('layersconfig.json', function (data) {
+        loadLayers(data);
+    });
+}
+/**
+ * Пробегаем по массиву с настройками для слоя
+ * В зависимости от типа слоя нужным видом инициализируем слой и отрисовываем его
+ * @param data - массив данных, полученных из файла настроек слоев*/
+function loadLayers(data) {
+    control = L.control.layers({}, {});
+    control.addTo(map);
+    var layersJSON = data.layers;
+    $.each(layersJSON, function (key, value) {
+        switch (value.layertypefunction) {
+            case "ltilelayer":
+                //Добавляем в массив слоев новый слой по индексу value.layercodename
+                layers[value.layercodename] = L.tileLayer(value.pathto, {});
+                //Отрисовываем слой
+                layers[value.layercodename];
+                loadLayerControl(value);
+                break;
+            case "casual":
+                loadJSON(value.pathto, function (data) {
+                    var points = data.points;
+                    //Добавляем в массив слоев новый слой по индексу value.layercodename
+                    layers[value.layercodename] = L.polyline(points, {
+                        color: value.color,
+                        width: value.width
+                    });
+                    loadLayerControl(value);
+                });
+                break;
+            default:
+                alert("Not match layerType!");
+                break;
+        }
+    });
+};
+function loadLayerControl(layer) {
+    switch (layer.layertype) {
+        case "basemap":
+            //Добавляем слой из array в контрол
+            control.addBaseLayer(layers[layer.layercodename], layer.layername);
+            break;
+        case "overlay":
+            //Добавляем слой из array в контрол
+            control.addOverlay(layers[layer.layercodename], layer.layername);
+            break;
+        default:
+            alert("Not match layerType!");
+            break;
+    }
+}
+/**
+ * @param path - путь до файла конфига
+ * @param success - функция (callback), которая вызовется при успешной загрузке файла
+ * @param error - функция (callback), которая вызовется при ошибке загрузки*/
+function loadJSON(path, success, error) {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                if (success)
+                    success(JSON.parse(xhr.responseText));
+            } else {
+                if (error)
+                    error(xhr);
+            }
+        }
+    };
+    xhr.open("GET", path, true);
+    xhr.send();
+}
