@@ -22,13 +22,15 @@
         // Получаем параметры и рисуем карту
         /**@param alldata - массив данных, полученных из файла настроек
          * @param i - индекс нужного конфига в массиве
-         * @param l - длина массива (не знаю зачем)*/
+         * @param l - длина массива (для будущих функций, если длина массива и индекс массика равны)*/
         function varmap(alldata, i, l) {
             var d = alldata[i];
             var center = d.center;
             var zoom = d.zoom;
             var minZoom = d.minZoom;
             var maxZoom = d.maxZoom;
+            
+
             //Вносим параметры карты
             map = L.map('map', {
                 center: center,
